@@ -54,6 +54,8 @@ class SfmovTools:
     def extensions():
         """Returns the file extension that are used in the class"""
         return {'sfmov': '.sfmov', 'inc': '.inc', 'hdf5': '.hdf5'}
+    
+
 
     def open_file(self, extension):
         """ Open and return a file object based on the input path"""
@@ -73,12 +75,20 @@ class SfmovTools:
             int_time:    (float) camera's set integration time
             camera_name: (string) camera's name
         """
+
+
         with self.open_file('inc') as file:
             file_lines = file.readlines()
             inc_data = {x[0]: x[1:] for x in [s.split(b' ') for s in file_lines]}
-            self.int_time = float(inc_data[b'ITime_0'][0])
-            self.frame_rate = float(inc_data[b'FRate_0'][0])
-            self.camera_name = inc_data[b'xmrCameraName'][0].strip(b'\n').strip(b'\r')
+            
+            get_index = lambda key_list, byte_key: [x for x in key_list if byte_key in x].pop()
+            
+            integration_key = get_index(inc_data.keys(), b'ITime')
+            frame_rate_key =  get_index(inc_data.keys(), b'FRate')
+            camera_name_key = get_index(inc_data.keys(), b'CameraName')
+            self.int_time = float(inc_data[integration_key][0])
+            self.frame_rate = float(inc_data[frame_rate_key][0])
+            self.camera_name = inc_data[camera_name_key][0].strip(b'\n').strip(b'\r')
         return self.frame_rate, self.int_time, self.camera_name
 
     def scrape_sfmov(self):
