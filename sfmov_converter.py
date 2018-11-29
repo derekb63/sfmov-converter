@@ -211,7 +211,7 @@ class SfmovTools:
                 # Cacluate the mean counts for each frame
                 self.meanCounts = np.mean(self.X, axis=(1, 2))
                 # plot the first image
-                self.im = ax1.imshow(self.X[self.ind])
+                self.im = ax1.imshow(self.X[self.ind], cmap='inferno')
                 # plot the mean counts
                 self.ax2.plot(self.meanCounts)
                 # run the update function to show the plot
@@ -225,6 +225,7 @@ class SfmovTools:
                     self.ind = (self.ind + 1) % self.num_frames
                 else:
                     self.ind = (self.ind - 1) % self.num_frames
+                self.frameSlider.set_val(self.ind)
                 self.update()
 
             def ondrag(self, event):
