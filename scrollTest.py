@@ -31,7 +31,7 @@ def viewvideo(filename):
     #                             'Frame Number', 0, self.slices, valinit=0)
             
             self.meanCounts = np.mean(self.data, axis=(1,2))
-            self.im = ax1.matshow(self.data[self.ind], cmap='nipy_spectral', vmin=0, vmax=16384)
+            self.im = ax1.matshow(self.data[self.ind], cmap='plasma', vmin=0, vmax=16384)
             self.ax2.plot(self.meanCounts)
             self.update()
     
@@ -57,6 +57,7 @@ def viewvideo(filename):
     print('Viewing: %s' % filename)
     fig, (ax1, ax2)  = plt.subplots(2, 1, gridspec_kw = {'height_ratios':[4, 1]})
     data = tables.open_file(filename, mode='r').root.data.read()
+    print('Frame Rate: %s' % tables.open_file(filename, mode='r').root.frame_rate.read())
     tracker = IndexTracker(ax1, ax2, data)
 #    fig.canvas.mpl_connect('slider_event', tracker.ondrag)
     fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
@@ -66,8 +67,8 @@ def viewvideo(filename):
 
 
 if __name__ == "__main__":
-    fileDirectory = "D:\\Ignition_11_26_2018\\"
+    fileDirectory = "D:\\Ignition_12_19_2018\\"
     os.chdir(fileDirectory)
     fileList = glob("*.hdf5")
-
-    viewer = viewvideo(fileList[4])
+    [print(idx, val) for idx, val in enumerate(fileList)]
+    viewer = viewvideo(fileList[9])
