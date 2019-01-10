@@ -171,7 +171,7 @@ class SfmovTools:
             raise OSError('The file already exists please choose'+
                           'a different one or delete the file')
         return self.data
-
+    
     @staticmethod
     def view(filename):
         """
