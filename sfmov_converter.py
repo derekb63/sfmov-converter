@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Mar 12 17:46:19 2018
-@author: capland
+@author: caplanda
 modified by Derek Bean
 """
 
 import numpy as np
 import h5py
 import os
-import tables
-import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
 
 
 class SfmovTools:
@@ -57,13 +54,16 @@ class SfmovTools:
     def extensions():
         """Returns the file extension that are used in the class"""
         return {'sfmov': '.sfmov', 'inc': '.inc', 'hdf5': '.hdf5'}
-    
-
 
     def open_file(self, extension):
-        """ Open and return a file object based on the input path"""
+        """
+        Open and return a file object based on the input path
+
+        Input:
+        extension: a string with the
+        """
         return open(os.path.join(self.opendir, self.file + self.extensions()[extension]),
-                    'r+b')
+                    'rb')
 
     def scrape_inc(self):
         """
@@ -78,20 +78,12 @@ class SfmovTools:
             int_time:    (float) camera's set integration time
             camera_name: (string) camera's name
         """
-
-
         with self.open_file('inc') as file:
             file_lines = file.readlines()
             inc_data = {x[0]: x[1:] for x in [s.split(b' ') for s in file_lines]}
-            
-            get_index = lambda key_list, byte_key: [x for x in key_list if byte_key in x].pop()
-            
-            integration_key = get_index(inc_data.keys(), b'ITime')
-            frame_rate_key =  get_index(inc_data.keys(), b'FRate')
-            camera_name_key = get_index(inc_data.keys(), b'CameraName')
-            self.int_time = float(inc_data[integration_key][0])
-            self.frame_rate = float(inc_data[frame_rate_key][0])
-            self.camera_name = inc_data[camera_name_key][0].strip(b'\n').strip(b'\r')
+            self.int_time = float(inc_data[b'ITime'][0])
+            self.frame_rate = float(inc_data[b'FRate'][0])
+            self.camera_name = inc_data[b'xmrCameraName'][0].strip(b'\n').strip(b'\r')
         return self.frame_rate, self.int_time, self.camera_name
 
     def scrape_sfmov(self):
@@ -155,99 +147,14 @@ class SfmovTools:
         self.scrape_sfmov()
         self.scrape_inc()
         try:
-            with h5py.File(os.path.join(self.savedir, self.file +
-                                        self.extensions()['hdf5']),
-                           'w-',) as file:
-                file.create_dataset('data', data=self.data, compression='gzip',
-                                    compression_opts=compression_factor)
-                file.create_dataset('number_of_frames',
-                                    data=self.number_of_frames)
+            with h5py.File(os.path.join(self.savedir, self.file + self.extensions()['hdf5']), 'w-',) as file:
+                file.create_dataset('data', data=self.data, compression='gzip', compression_opts=compression_factor)
+                file.create_dataset('number_of_frames', data=self.number_of_frames)
                 file.create_dataset('width', data=self.dimensions['width'])
                 file.create_dataset('height', data=self.dimensions['height'])
                 file.create_dataset('dropped_frames', data=self.dropped_frames)
                 file.create_dataset('frame_rate', data=self.frame_rate)
                 file.create_dataset('int_time', data=self.int_time)
         except OSError:
-            raise OSError('The file already exists please choose'+
-                          'a different one or delete the file')
+            raise OSError('The file already exists please choose a different one or delete the file')
         return self.data
-    
-    @staticmethod
-    def view(filename):
-        """
-            Create an interactive matplotlib window for viewing the videos.
-            The frames can be scrolled through using the scroll wheel for
-            individual frames and the mean counts slider for large adjustments.
-
-            Inputs:
-                filename: location of the hdf5 file to be viewed
-            Outputs:
-                a matplotlib window that allows scrubbing through videos
-        """
-        class VideoViewer(object):
-            """
-                A class that creates the plot window and updates based on user
-                inputs. This class is setup to show each image on a central
-                frame and then provide alternative data and frame selection
-                in the plot below it.
-            """
-            def __init__(self, ax1, ax2, X):
-                # Set the class variables and format the plot windows
-                self.ax1 = ax1
-                self.ax2 = ax2
-                self.ax2.set_ylabel('Mean Counts')
-                self.ax2.set_xlabel('Frame Number')
-                ax1.set_title('use scroll wheel to navigate images' +
-                              'or click on the mean counts plot')
-                self.X = X
-                self.num_frames, _, _ = X.shape  # get the number of frames
-                # initialize the frame slider over the top of the ax2 plot and
-                # to have a range from 0 to the number of frames with no fill a
-                # step of 1 and an integer display
-                self.frameSlider = Slider(self.ax2.axes, '', 0,
-                                          self.num_frames-1, valstep=1,
-                                          valfmt='%i', fill=False)
-                self.ind = 0  # set the start indes
-                # Cacluate the mean counts for each frame
-                self.meanCounts = np.mean(self.X, axis=(1, 2))
-                # plot the first image
-                self.im = ax1.imshow(self.X[self.ind], cmap='inferno')
-                # plot the mean counts
-                self.ax2.plot(self.meanCounts)
-                # run the update function to show the plot
-                self.update()
-
-            def onscroll(self, event):
-                """
-                 Change the frame index based on the scroll wheel movement
-                """
-                if event.button == 'up':
-                    self.ind = (self.ind + 1) % self.num_frames
-                else:
-                    self.ind = (self.ind - 1) % self.num_frames
-                self.frameSlider.set_val(self.ind)
-                self.update()
-
-            def ondrag(self, event):
-                """
-                Change the displayed frame number to the slider value
-                """
-                self.ind = int(self.frameSlider.val)
-                self.update()
-
-            def update(self):
-                """
-                Redraw the plot with the updated image number
-                """
-                self.im.set_data(self.X[self.ind])
-                self.im.axes.figure.canvas.draw()
-        # Initialize the plot
-        fig, (ax1, ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 1]})
-        # Load the data from the hdf5 file using pytables
-        image_data = tables.open_file(filename, mode='r').root.data.read()
-        # Create the video viewer object and pass the plot and the data
-        viewer = VideoViewer(ax1, ax2, image_data)
-        # Connect the scroll wheel and the frame slide
-        fig.canvas.mpl_connect('scroll_event', viewer.onscroll)
-        viewer.frameSlider.on_changed(viewer.ondrag)
-
