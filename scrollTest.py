@@ -63,7 +63,7 @@ def viewvideo(filename):
 
 
 if __name__ == "__main__":
-    fileDirectory = "E:\\sfmofFilesForDan"
+    fileDirectory = "E:\\sfmovFilesForDan"
     os.chdir(fileDirectory)
     fileList = glob("*.hdf5")
     [print(idx, val) for idx, val in enumerate(fileList)]
