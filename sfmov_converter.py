@@ -101,7 +101,6 @@ class SfmovTools:
 
         Outputs:
             data:       (numpy array) image data shaped in the format (frame_number, height, width)
-            TODO: change dimensions to a dict called info with the dimensions number of frames and dropped frames
         """
         with self.open_file('sfmov') as file:
             # content will contain the data in the file header
@@ -128,8 +127,8 @@ class SfmovTools:
                 # format. This uses disk space to store the data and takes quite a bit longer than the previous method
                 self.data = np.memmap('temp_sfmov_data',
                                       dtype=np.uint16, mode='w+',
-                                      shape = (frames_claimed, self.dimensions['height'], self.dimensions['width']))
-                frame_pixels = self.dimensions['height']*self.dimensions['width']
+                                      shape=(frames_claimed, self.dimensions['height'], self.dimensions['width']))
+                frame_pixels = np.multiply(self.dimensions['height'], self.dimensions['width'])
                 for i in range(frames_claimed):
                     temp_array = np.fromfile(file, dtype=np.uint16, count=frame_pixels)
                     temp_array = np.reshape(temp_array, (self.dimensions['height'], self.dimensions['width']))

@@ -1,4 +1,4 @@
-from ..tools import  sfmov_converter as sc
+import sfmov_converter as sc
 import os
 import numpy as np
 import pytest
